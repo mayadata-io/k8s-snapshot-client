@@ -18,9 +18,11 @@ limitations under the License.
 package v1
 
 import (
+	"time"
+
 	v1 "github.com/openebs/k8s-snapshot-client/snapshot/pkg/apis/volumesnapshot/v1"
 	scheme "github.com/openebs/k8s-snapshot-client/snapshot/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -37,11 +39,11 @@ type VolumeSnapshotDataInterface interface {
 	Create(*v1.VolumeSnapshotData) (*v1.VolumeSnapshotData, error)
 	Update(*v1.VolumeSnapshotData) (*v1.VolumeSnapshotData, error)
 	UpdateStatus(*v1.VolumeSnapshotData) (*v1.VolumeSnapshotData, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.VolumeSnapshotData, error)
-	List(opts meta_v1.ListOptions) (*v1.VolumeSnapshotDataList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.VolumeSnapshotData, error)
+	List(opts metav1.ListOptions) (*v1.VolumeSnapshotDataList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.VolumeSnapshotData, err error)
 	VolumeSnapshotDataExpansion
 }
@@ -59,7 +61,7 @@ func newVolumeSnapshotDatas(c *VolumesnapshotV1Client) *volumeSnapshotDatas {
 }
 
 // Get takes name of the volumeSnapshotData, and returns the corresponding volumeSnapshotData object, and an error if there is any.
-func (c *volumeSnapshotDatas) Get(name string, options meta_v1.GetOptions) (result *v1.VolumeSnapshotData, err error) {
+func (c *volumeSnapshotDatas) Get(name string, options metav1.GetOptions) (result *v1.VolumeSnapshotData, err error) {
 	result = &v1.VolumeSnapshotData{}
 	err = c.client.Get().
 		Resource("volumesnapshotdatas").
@@ -71,22 +73,32 @@ func (c *volumeSnapshotDatas) Get(name string, options meta_v1.GetOptions) (resu
 }
 
 // List takes label and field selectors, and returns the list of VolumeSnapshotDatas that match those selectors.
-func (c *volumeSnapshotDatas) List(opts meta_v1.ListOptions) (result *v1.VolumeSnapshotDataList, err error) {
+func (c *volumeSnapshotDatas) List(opts metav1.ListOptions) (result *v1.VolumeSnapshotDataList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.VolumeSnapshotDataList{}
 	err = c.client.Get().
 		Resource("volumesnapshotdatas").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested volumeSnapshotDatas.
-func (c *volumeSnapshotDatas) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *volumeSnapshotDatas) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Resource("volumesnapshotdatas").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -129,7 +141,7 @@ func (c *volumeSnapshotDatas) UpdateStatus(volumeSnapshotData *v1.VolumeSnapshot
 }
 
 // Delete takes name of the volumeSnapshotData and deletes it. Returns an error if one occurs.
-func (c *volumeSnapshotDatas) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *volumeSnapshotDatas) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("volumesnapshotdatas").
 		Name(name).
@@ -139,10 +151,15 @@ func (c *volumeSnapshotDatas) Delete(name string, options *meta_v1.DeleteOptions
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *volumeSnapshotDatas) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *volumeSnapshotDatas) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Resource("volumesnapshotdatas").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()
